@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystic Shop — Shulker-Bestellungen</title>
+  <meta name="description" content="Shulkerweise Items bestellen: Eisen, Shulkerschalen, Blaze Rods, Pfeile, Knochen, Mohn, Goldbarren, Goldnuggets, verrottetes Fleisch + leere Shulkerboxen. Preise nach mysticItemDB worth.json.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    html { color-scheme: dark; }
+    body {
+      background-color: #050509;
+      background-image:
+        radial-gradient(900px 480px at 15% -5%, rgba(124, 58, 237, 0.16), transparent 60%),
+        radial-gradient(800px 500px at 85% 0%, rgba(49, 46, 129, 0.22), transparent 60%),
+        radial-gradient(700px 420px at 50% 110%, rgba(124, 58, 237, 0.10), transparent 60%);
+      background-attachment: fixed;
+    }
+    .gold-text {
+      background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 38%, #d97706 72%, #fbbf24 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 22px rgba(251, 191, 36, 0.25));
+    }
+    .card { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .card:hover { transform: translateY(-3px); }
+    input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+    ::selection { background: rgba(167, 139, 250, 0.4); }
+  </style>
+</head>
+<body class="font-sans text-slate-200 min-h-screen antialiased">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 pb-16">
+
+    <header class="text-center pt-12 pb-6">
+      <p class="font-display text-[11px] sm:text-xs tracking-[0.4em] text-violet-300/70 uppercase">❖&nbsp;&nbsp;Mystic Vanilla Shop&nbsp;&nbsp;❖</p>
+      <h1 class="font-display gold-text font-extrabold text-4xl sm:text-6xl mt-3 tracking-wide">SHULKER-SHOP</h1>
+      <p class="text-slate-400 text-sm sm:text-base mt-3 max-w-2xl mx-auto">
+        Shulkerweise bestellen, per E-Mail senden, ingame per <code class="text-violet-200">/msg</code> bestätigen.
+        Preise nach <span class="text-slate-200 font-semibold">mysticItemDB / worth.json</span> (Stand 24.09.2026).
+      </p>
+      <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-slate-400">
+        <span>1 volle Shulker = 27 Stacks = <b class="text-slate-200">1.728 Items</b> (64er-Stacks)</span>
+      </div>
+    </header>
+
+    <!-- Ablauf -->
+    <section class="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md p-4 sm:p-6 mb-6">
+      <h2 class="font-display text-sm tracking-[0.3em] uppercase text-violet-300/70 text-center">So läuft's</h2>
+      <ol class="grid sm:grid-cols-3 gap-3 mt-4 text-sm">
+        <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">1. Zusammenstellen</b><br><span class="text-slate-400">Mengen wählen, Minecraft-Name eintragen, Bestellcode notieren.</span></li>
+        <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">2. Abschicken</b><br><span class="text-slate-400">Formular sendet die Bestellung per FormSubmit an lokrogamer.29@gmail.com.</span></li>
+        <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">3. Ingame bestätigen</b><br><span class="text-slate-400">Code per <code class="text-violet-200">/msg Lokrogamer CODE</code> schicken, dann den Betrag an Lokrogamer schicken.</span></li>
+      </ol>
+    </section>
+
+    <form id="order-form" action="https://formsubmit.co/lokrogamer.29@gmail.com" method="POST" class="space-y-6">
+      <input type="hidden" name="_subject" id="fs_subject" value="Neue Shulker-Bestellung">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+      <input type="hidden" name="Bestellcode" id="fs_code" value="">
+      <input type="hidden" name="Gesamt (Worth)" id="fs_total" value="">
+      <input type="hidden" name="Bestelldetails" id="fs_details" value="">
+
+      <!-- Produkte -->
+      <main>
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <p class="text-xs text-slate-500 mt-3 text-center">Einzelpreise aus <code>mysticItemDB/docs/data/worth.json</code>: Eisenbarren 5,5 · Shulkerschale 60,5 · Blaze Rod 2,42 · Pfeil 1,45 · Knochen 2,64 · Mohn 1,1 · Goldbarren 5,5 · Goldnugget 0,55 · verrottetes Fleisch 1,21 · leere Shulkerbox 440.</p>
+      </main>
+
+      <!-- Kunde + Code -->
+      <section class="grid lg:grid-cols-2 gap-4">
+        <div class="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md p-5">
+          <h2 class="font-display text-sm tracking-[0.3em] uppercase text-violet-300/70">Deine Daten</h2>
+          <label class="block mt-4 text-xs uppercase tracking-widest text-slate-400" for="mcname">Minecraft-Name *</label>
+          <input id="mcname" name="Minecraft-Name" required minlength="3" maxlength="16" pattern="[A-Za-z0-9_]{3,16}"
+            placeholder="z. B. Steve_07" autocomplete="username"
+            class="mt-1 w-full bg-white/[0.04] border border-violet-300/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-300/60 focus:ring-2 focus:ring-violet-500/20">
+          <label class="block mt-4 text-xs uppercase tracking-widest text-slate-400" for="discord">Discord (optional)</label>
+          <input id="discord" name="Discord" maxlength="64" placeholder="z. B. name#1234"
+            class="mt-1 w-full bg-white/[0.04] border border-violet-300/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-300/60 focus:ring-2 focus:ring-violet-500/20">
+          <label class="block mt-4 text-xs uppercase tracking-widest text-slate-400" for="note">Bemerkung (optional)</label>
+          <textarea id="note" name="Bemerkung" rows="2" maxlength="500" placeholder="Lieferwunsch, Treffpunkt …"
+            class="mt-1 w-full bg-white/[0.04] border border-violet-300/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-300/60 focus:ring-2 focus:ring-violet-500/20"></textarea>
+        </div>
+
+        <div class="rounded-3xl border border-amber-200/20 bg-amber-200/[0.04] backdrop-blur-md p-5">
+          <h2 class="font-display text-sm tracking-[0.3em] uppercase text-amber-200/80">Bestellcode &amp; Ingame</h2>
+          <div class="mt-4 flex items-center gap-2">
+            <code id="order-code" class="flex-1 text-center font-mono text-2xl font-bold tracking-widest text-amber-100 bg-black/60 border border-amber-200/30 rounded-xl px-4 py-3">—</code>
+            <button type="button" id="btn-new-code" title="Neuen Code erzeugen" class="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 hover:border-violet-300/60">↻</button>
+            <button type="button" id="btn-copy-code" title="Code kopieren" class="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 hover:border-violet-300/60">⧉</button>
+          </div>
+          <div class="mt-3">
+            <label class="text-xs uppercase tracking-widest text-slate-400" for="msg-preview">Ingame-Nachricht (kopieren &amp; einfügen)</label>
+            <div class="flex gap-2 mt-1">
+              <code id="msg-preview" class="flex-1 text-xs sm:text-sm text-violet-100 bg-black/60 border border-violet-300/20 rounded-xl px-3 py-3 break-all">/msg Lokrogamer …</code>
+              <button type="button" id="btn-copy-msg" class="rounded-xl border border-white/10 bg-white/[0.04] px-3 hover:border-violet-300/60">⧉</button>
+            </div>
+          </div>
+          <div class="mt-4 rounded-2xl bg-black/50 border border-white/10 p-4 text-sm">
+            <div class="flex justify-between"><span class="text-slate-400">Positionen</span><b id="sum-count" class="tabular-nums">0</b></div>
+            <div class="flex justify-between mt-1"><span class="text-slate-400">Items gesamt</span><b id="sum-items" class="tabular-nums">0</b></div>
+            <div class="flex justify-between mt-2 text-lg"><span class="text-slate-200 font-semibold">Gesamt (Worth)</span><b id="sum-total" class="text-amber-200 tabular-nums">0</b></div>
+            <p id="order-error" class="hidden text-red-300 text-xs mt-2">Bitte Minecraft-Namen eintragen und mindestens 1 Menge wählen.</p>
+          </div>
+          <button type="submit" class="mt-4 w-full rounded-2xl bg-violet-500/90 hover:bg-violet-400 border border-violet-300/70 px-4 py-4 font-display font-bold tracking-widest uppercase text-white shadow-[0_0_30px_-8px_rgba(167,139,250,0.8)] transition">
+            Bestellung senden
+          </button>
+          <p class="text-[11px] text-slate-500 mt-2 text-center">Nach dem Absenden: Code per <code class="text-violet-200">/msg Lokrogamer DEINCODE</code> schicken und den Betrag an Lokrogamer schicken.</p>
+        </div>
+      </section>
+    </form>
+
+    <footer class="text-center pt-8 text-xs text-slate-600">
+      <p>Mystic Shop · Preise = worth.json (mysticItemDB) · Versand per FormSubmit an lokrogamer.29@gmail.com</p>
+    </footer>
+  </div>
+
+  <script>
+    'use strict';
+    // Preise aus mysticItemDB/docs/data/worth.json (Stand 24.09.2026)
+    var SHULKER_ITEMS = 1728; // 27 Slots x 64
+    var PRODUCTS = [
+      { key: 'eisen',       de: 'Eisenbarren',          mc: 'minecraft:iron_ingot',   icon: '⛓️', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 5.5 },
+      { key: 'shells',      de: 'Shulkerschalen',       mc: 'minecraft:shulker_shell', icon: '🐚', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 60.5 },
+      { key: 'blaze',       de: 'Blaze Rods',           mc: 'minecraft:blaze_rod',    icon: '🔥', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 2.42 },
+      { key: 'arrows',      de: 'Pfeile (Arrows)',      mc: 'minecraft:arrow',        icon: '🏹', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 1.45 },
+      { key: 'bones',       de: 'Knochen (Bones)',      mc: 'minecraft:bone',         icon: '🦴', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 2.64 },
+      { key: 'mohn',        de: 'Mohn (Poppies)',       mc: 'minecraft:poppy',        icon: '🌺', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 1.1 },
+      { key: 'gold',        de: 'Goldbarren',           mc: 'minecraft:gold_ingot',   icon: '🟨', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 5.5 },
+      { key: 'nuggets',     de: 'Goldnuggets',          mc: 'minecraft:gold_nugget',  icon: '✨', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 0.55 },
+      { key: 'fleisch',     de: 'Verrottetes Fleisch',  mc: 'minecraft:rotten_flesh', icon: '🍖', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 1.21 },
+      { key: 'leer',        de: 'Leere Shulkerboxen',   mc: 'minecraft:shulker_box',  icon: '📦', unit: 'stueck',  itemsPerUnit: 1,              pricePerItem: 440 },
+    ];
+
+    var grid = document.getElementById('product-grid');
+    var mcnameEl = document.getElementById('mcname');
+    var codeEl = document.getElementById('order-code');
+    var msgEl = document.getElementById('msg-preview');
+    var form = document.getElementById('order-form');
+
+    function fmt(n) {
+      return n.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+    function unitPrice(p) { return p.pricePerItem * p.itemsPerUnit; }
+    function qtyId(p) { return 'qty_' + p.key; }
+
+    function renderProducts() {
+      grid.innerHTML = PRODUCTS.map(function (p) {
+        var up = unitPrice(p);
+        var unitLabel = p.unit === 'shulker' ? 'volle Shulker' : 'Stück';
+        var perLabel = p.unit === 'shulker'
+          ? fmt(p.pricePerItem) + ' / Item · ' + fmt(up) + ' / Shulker (1.728 Stk.)'
+          : fmt(p.pricePerItem) + ' / Stück';
+        return '' +
+          '<article class="card rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5" data-key="' + p.key + '">' +
+            '<div class="flex items-center gap-3">' +
+              '<div class="w-12 h-12 rounded-xl bg-black/60 ring-1 ring-white/10 flex items-center justify-center text-2xl">' + p.icon + '</div>' +
+              '<div class="min-w-0">' +
+                '<h3 class="font-semibold text-[15px] text-slate-100">' + p.de + '</h3>' +
+                '<p class="text-[11px] text-slate-500 font-mono truncate">' + p.mc + '</p>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-xs text-amber-100/80 mt-3 tabular-nums">' + perLabel + '</p>' +
+            '<div class="flex items-center gap-2 mt-3">' +
+              '<button type="button" data-act="minus" data-key="' + p.key + '" class="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.04] text-lg hover:border-violet-300/60">−</button>' +
+              '<input id="' + qtyId(p) + '" name="Menge_' + p.de + ' (' + unitLabel + ')" type="number" min="0" max="64" step="1" value="0" inputmode="numeric"' +
+                ' class="flex-1 min-w-0 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-center tabular-nums" data-key="' + p.key + '">' +
+              '<button type="button" data-act="plus" data-key="' + p.key + '" class="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.04] text-lg hover:border-violet-300/60">+</button>' +
+            '</div>' +
+            '<p class="text-[11px] text-slate-500 mt-1">' + unitLabel + '</p>' +
+            '<p class="text-sm mt-2">Zwischensumme: <b class="text-amber-200 tabular-nums" id="sub_' + p.key + '">0</b></p>' +
+          '</article>';
+      }).join('');
+    }
+
+    function getQty(key) {
+      var el = document.getElementById(qtyId({ key: key }));
+      var v = parseInt(el && el.value, 10);
+      if (isNaN(v) || v < 0) return 0;
+      return Math.min(64, v);
+    }
+
+    function totals() {
+      var lines = [];
+      var total = 0, count = 0, items = 0;
+      PRODUCTS.forEach(function (p) {
+        var q = getQty(p.key);
+        var sub = q * unitPrice(p);
+        var subEl = document.getElementById('sub_' + p.key);
+        if (subEl) subEl.textContent = fmt(sub);
+        if (q > 0) {
+          count++;
+          total += sub;
+          items += q * p.itemsPerUnit;
+          lines.push({ p: p, q: q, sub: sub });
+        }
+      });
+      document.getElementById('sum-count').textContent = count;
+      document.getElementById('sum-items').textContent = fmt(items);
+      document.getElementById('sum-total').textContent = fmt(total);
+      return { lines: lines, total: total, count: count, items: items };
+    }
+
+    var CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    function newCode() {
+      var buf = new Uint32Array(6);
+      (window.crypto || window.msCrypto).getRandomValues(buf);
+      var s = 'MV-';
+      for (var i = 0; i < 6; i++) s += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length];
+      return s;
+    }
+    function setCode(c) {
+      codeEl.textContent = c;
+      document.getElementById('fs_code').value = c;
+      updateMsg();
+    }
+
+    function updateMsg() {
+      var mc = (mcnameEl.value || '').trim() || 'DEINNAME';
+      msgEl.textContent = '/msg Lokrogamer ' + codeEl.textContent + ' ' + mc;
+    }
+
+    function copyText(t, btn) {
+      function done() {
+        if (!btn) return;
+        var old = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(function () { btn.textContent = old; }, 1200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = t;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done();
+      }
+    }
+
+    renderProducts();
+    setCode(newCode());
+    totals();
+
+    grid.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-act]');
+      if (!b) return;
+      var key = b.getAttribute('data-key');
+      var el = document.getElementById(qtyId({ key: key }));
+      var v = getQty(key) + (b.getAttribute('data-act') === 'plus' ? 1 : -1);
+      v = Math.max(0, Math.min(64, v));
+      el.value = v;
+      totals();
+    });
+    grid.addEventListener('input', totals);
+    mcnameEl.addEventListener('input', updateMsg);
+    document.getElementById('btn-new-code').addEventListener('click', function () { setCode(newCode()); });
+    document.getElementById('btn-copy-code').addEventListener('click', function () { copyText(codeEl.textContent, this); });
+    document.getElementById('btn-copy-msg').addEventListener('click', function () { copyText(msgEl.textContent, this); });
+
+    form.addEventListener('submit', function (e) {
+      var t = totals();
+      updateMsg();
+      var err = document.getElementById('order-error');
+      var mcOk = /^[A-Za-z0-9_]{3,16}$/.test((mcnameEl.value || '').trim());
+      if (!mcOk || t.count === 0) {
+        e.preventDefault();
+        err.classList.remove('hidden');
+        (!mcOk ? mcnameEl : document.getElementById(qtyId(PRODUCTS[0]))).focus();
+        return;
+      }
+      err.classList.add('hidden');
+      var detailLines = t.lines.map(function (l) {
+        var unitLabel = l.p.unit === 'shulker' ? 'Shulker' : 'Stück';
+        return l.p.de + ' (' + l.p.mc + '): ' + l.q + ' ' + unitLabel + ' x ' + fmt(unitPrice(l.p)) + ' = ' + fmt(l.sub);
+      });
+      var details = 'Code: ' + codeEl.textContent + '\nMinecraft: ' + mcnameEl.value.trim() +
+        '\nIngame: /msg Lokrogamer ' + codeEl.textContent + ' ' + mcnameEl.value.trim() +
+        '\nBetrag an Lokrogamer: ' + fmt(t.total) + ' Worth\n\n' + detailLines.join('\n') +
+        '\n\nItems gesamt: ' + fmt(t.items) + '\nPreisquelle: mysticItemDB worth.json (Stand 24.09.2026)';
+      document.getElementById('fs_total').value = fmt(t.total) + ' Worth';
+      document.getElementById('fs_details').value = details;
+      document.getElementById('fs_subject').value = 'Neue Shulker-Bestellung ' + codeEl.textContent + ' (' + mcnameEl.value.trim() + ', ' + fmt(t.total) + ' Worth)';
+    });
+  </script>
+</body>
+</html>
