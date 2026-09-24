@@ -52,7 +52,7 @@
       <h1 class="font-display gold-text font-extrabold text-4xl sm:text-6xl mt-3 tracking-wide">SHULKER-SHOP</h1>
       <p class="text-slate-400 text-sm sm:text-base mt-3 max-w-2xl mx-auto">
         Shulkerweise bestellen, per E-Mail senden, ingame per <code class="text-violet-200">/msg</code> bestätigen.
-        Preise nach <span class="text-slate-200 font-semibold">mysticItemDB / worth.json</span> (Stand 24.09.2026).
+        Preise werden <span class="text-slate-200 font-semibold">live aus der mysticItemDB (worth.json)</span> geladen — alle angezeigten Preise sind netto, beim Checkout kommen <span class="text-amber-200 font-semibold">+15&nbsp;% Zahlungsgebühr</span> dazu.
       </p>
       <div class="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-slate-400">
         <span>1 volle Shulker = 27 Stacks = <b class="text-slate-200">1.728 Items</b> (64er-Stacks)</span>
@@ -65,7 +65,7 @@
       <ol class="grid sm:grid-cols-3 gap-3 mt-4 text-sm">
         <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">1. Zusammenstellen</b><br><span class="text-slate-400">Mengen wählen, Minecraft-Name eintragen, Bestellcode notieren.</span></li>
         <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">2. Abschicken</b><br><span class="text-slate-400">Formular sendet die Bestellung per FormSubmit an lokrogamer.29@gmail.com.</span></li>
-        <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">3. Ingame bestätigen</b><br><span class="text-slate-400">Code per <code class="text-violet-200">/msg Lokrogamer CODE</code> schicken, dann den Betrag an Lokrogamer schicken.</span></li>
+        <li class="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><b class="text-amber-200">3. Ingame bestätigen</b><br><span class="text-slate-400">Code per <code class="text-violet-200">/msg Lokrogamer CODE</code> schicken, dann den Gesamtbetrag inkl. 15&nbsp;% Gebühr an Lokrogamer schicken.</span></li>
       </ol>
     </section>
 
@@ -75,13 +75,16 @@
       <input type="hidden" name="_captcha" value="false">
       <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
       <input type="hidden" name="Bestellcode" id="fs_code" value="">
-      <input type="hidden" name="Gesamt (Worth)" id="fs_total" value="">
+      <input type="hidden" name="Zwischensumme (netto, Worth)" id="fs_subtotal" value="">
+      <input type="hidden" name="Zahlungsgebuehr (15 %, Worth)" id="fs_fee" value="">
+      <input type="hidden" name="Gesamt inkl. Gebuehr (Worth)" id="fs_total" value="">
       <input type="hidden" name="Bestelldetails" id="fs_details" value="">
 
       <!-- Produkte -->
       <main>
         <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        <p class="text-xs text-slate-500 mt-3 text-center">Einzelpreise aus <code>mysticItemDB/docs/data/worth.json</code>: Eisenbarren 5,5 · Shulkerschale 60,5 · Blaze Rod 2,42 · Pfeil 1,45 · Knochen 2,64 · Mohn 1,1 · Goldbarren 5,5 · Goldnugget 0,55 · verrottetes Fleisch 1,21 · leere Shulkerbox 440.</p>
+        <p class="text-xs text-slate-500 mt-3 text-center" id="price-source">Preise werden live geladen …</p>
+        <p class="text-xs text-slate-500 mt-1 text-center">Alle Produktpreise sind netto (ohne Gebühr) · Checkout: Zwischensumme + 15&nbsp;% Zahlungsgebühr = zahlbarer Gesamtbetrag. <button type="button" id="btn-retry-prices" class="hidden underline hover:text-violet-200">Preise erneut laden</button></p>
       </main>
 
       <!-- Kunde + Code -->
@@ -117,26 +120,46 @@
           <div class="mt-4 rounded-2xl bg-black/50 border border-white/10 p-4 text-sm">
             <div class="flex justify-between"><span class="text-slate-400">Positionen</span><b id="sum-count" class="tabular-nums">0</b></div>
             <div class="flex justify-between mt-1"><span class="text-slate-400">Items gesamt</span><b id="sum-items" class="tabular-nums">0</b></div>
-            <div class="flex justify-between mt-2 text-lg"><span class="text-slate-200 font-semibold">Gesamt (Worth)</span><b id="sum-total" class="text-amber-200 tabular-nums">0</b></div>
+            <div class="flex justify-between mt-2"><span class="text-slate-400">Zwischensumme (netto)</span><b id="sum-subtotal" class="tabular-nums">0</b></div>
+            <div class="flex justify-between mt-1"><span class="text-slate-400">Zahlungsgebühr (+15&nbsp;%)</span><b id="sum-fee" class="tabular-nums">0</b></div>
+            <div class="flex justify-between mt-2 text-lg border-t border-white/10 pt-2"><span class="text-slate-200 font-semibold">Gesamt inkl. Gebühr</span><b id="sum-total" class="text-amber-200 tabular-nums">0</b></div>
             <p id="order-error" class="hidden text-red-300 text-xs mt-2">Bitte Minecraft-Namen eintragen und mindestens 1 Menge wählen.</p>
           </div>
           <button type="submit" class="mt-4 w-full rounded-2xl bg-violet-500/90 hover:bg-violet-400 border border-violet-300/70 px-4 py-4 font-display font-bold tracking-widest uppercase text-white shadow-[0_0_30px_-8px_rgba(167,139,250,0.8)] transition">
             Bestellung senden
           </button>
-          <p class="text-[11px] text-slate-500 mt-2 text-center">Nach dem Absenden: Code per <code class="text-violet-200">/msg Lokrogamer DEINCODE</code> schicken und den Betrag an Lokrogamer schicken.</p>
+          <p class="text-[11px] text-slate-500 mt-2 text-center">Nach dem Absenden: Code per <code class="text-violet-200">/msg Lokrogamer DEINCODE</code> schicken und den <b class="text-slate-300">Gesamtbetrag inkl. 15&nbsp;% Gebühr</b> an Lokrogamer schicken.</p>
         </div>
       </section>
     </form>
 
     <footer class="text-center pt-8 text-xs text-slate-600">
-      <p>Mystic Shop · Preise = worth.json (mysticItemDB) · Versand per FormSubmit an lokrogamer.29@gmail.com</p>
+      <p>Mystic Shop · Live-Preise = worth.json (mysticItemDB, Fallback eingebettet) · Anzeigen netto, Checkout +15&nbsp;% Gebühr · Versand per FormSubmit an lokrogamer.29@gmail.com</p>
     </footer>
   </div>
 
   <script>
     'use strict';
-    // Preise aus mysticItemDB/docs/data/worth.json (Stand 24.09.2026)
+    // Fallback-Preise aus mysticItemDB/docs/data/worth.json (Stand 24.09.2026).
+    // Live-Preise werden per HTTP aus der mysticItemDB nachgeladen (Fallback bleibt bei Fehlern aktiv).
+    var WORTH_URLS = [
+      'https://lokrogaming.github.io/mysticItemDB/data/worth.json',
+      'https://raw.githubusercontent.com/Lokrogaming/mysticItemDB/main/docs/data/worth.json'
+    ];
+    var FEE_RATE = 0.15; // +15 % Zahlungsgebühr auf die Bestellung (Checkout)
     var SHULKER_ITEMS = 1728; // 27 Slots x 64
+    var FALLBACK_PRICES = {
+      'minecraft:iron_ingot': 5.5,
+      'minecraft:shulker_shell': 60.5,
+      'minecraft:blaze_rod': 2.42,
+      'minecraft:arrow': 1.45,
+      'minecraft:bone': 2.64,
+      'minecraft:poppy': 1.1,
+      'minecraft:gold_ingot': 5.5,
+      'minecraft:gold_nugget': 0.55,
+      'minecraft:rotten_flesh': 1.21,
+      'minecraft:shulker_box': 440
+    };
     var PRODUCTS = [
       { key: 'eisen',       de: 'Eisenbarren',          mc: 'minecraft:iron_ingot',   icon: '⛓️', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 5.5 },
       { key: 'shells',      de: 'Shulkerschalen',       mc: 'minecraft:shulker_shell', icon: '🐚', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 60.5 },
@@ -200,7 +223,7 @@
 
     function totals() {
       var lines = [];
-      var total = 0, count = 0, items = 0;
+      var subtotal = 0, count = 0, items = 0;
       PRODUCTS.forEach(function (p) {
         var q = getQty(p.key);
         var sub = q * unitPrice(p);
@@ -208,15 +231,19 @@
         if (subEl) subEl.textContent = fmt(sub);
         if (q > 0) {
           count++;
-          total += sub;
+          subtotal += sub;
           items += q * p.itemsPerUnit;
           lines.push({ p: p, q: q, sub: sub });
         }
       });
+      var fee = subtotal * FEE_RATE;
+      var total = subtotal + fee;
       document.getElementById('sum-count').textContent = count;
       document.getElementById('sum-items').textContent = fmt(items);
+      document.getElementById('sum-subtotal').textContent = fmt(subtotal);
+      document.getElementById('sum-fee').textContent = fmt(fee);
       document.getElementById('sum-total').textContent = fmt(total);
-      return { lines: lines, total: total, count: count, items: items };
+      return { lines: lines, subtotal: subtotal, fee: fee, total: total, count: count, items: items };
     }
 
     var CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -261,6 +288,8 @@
     renderProducts();
     setCode(newCode());
     totals();
+    loadLivePrices();
+    document.getElementById('btn-retry-prices').addEventListener('click', loadLivePrices);
 
     grid.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-act]');
@@ -296,12 +325,84 @@
       });
       var details = 'Code: ' + codeEl.textContent + '\nMinecraft: ' + mcnameEl.value.trim() +
         '\nIngame: /msg Lokrogamer ' + codeEl.textContent + ' ' + mcnameEl.value.trim() +
-        '\nBetrag an Lokrogamer: ' + fmt(t.total) + ' Worth\n\n' + detailLines.join('\n') +
-        '\n\nItems gesamt: ' + fmt(t.items) + '\nPreisquelle: mysticItemDB worth.json (Stand 24.09.2026)';
+        '\nZwischensumme (netto): ' + fmt(t.subtotal) + ' Worth' +
+        '\nZahlungsgebuehr (+15 %): ' + fmt(t.fee) + ' Worth' +
+        '\nBetrag an Lokrogamer (inkl. Gebuehr): ' + fmt(t.total) + ' Worth\n\n' + detailLines.join('\n') +
+        '\n\nItems gesamt: ' + fmt(t.items) + '\nPreisquelle: ' + priceSourceLabel();
+      document.getElementById('fs_subtotal').value = fmt(t.subtotal) + ' Worth';
+      document.getElementById('fs_fee').value = fmt(t.fee) + ' Worth';
       document.getElementById('fs_total').value = fmt(t.total) + ' Worth';
       document.getElementById('fs_details').value = details;
-      document.getElementById('fs_subject').value = 'Neue Shulker-Bestellung ' + codeEl.textContent + ' (' + mcnameEl.value.trim() + ', ' + fmt(t.total) + ' Worth)';
+      document.getElementById('fs_subject').value = 'Neue Shulker-Bestellung ' + codeEl.textContent + ' (' + mcnameEl.value.trim() + ', ' + fmt(t.total) + ' Worth inkl. Gebuehr)';
     });
+
+    // ---- Live-Preise per HTTP (mit Fallback) ----
+    var livePricesLoaded = false;
+    function priceSourceLabel() {
+      return livePricesLoaded ? 'mysticItemDB worth.json (live per HTTP)' : 'mysticItemDB worth.json (Fallback-Preise)';
+    }
+    function setPriceStatus(msg, showRetry) {
+      var el = document.getElementById('price-source');
+      if (el) el.textContent = msg;
+      var retry = document.getElementById('btn-retry-prices');
+      if (retry) retry.classList.toggle('hidden', !showRetry);
+    }
+    function snapshotQty() {
+      var q = {};
+      PRODUCTS.forEach(function (p) { q[p.key] = getQty(p.key); });
+      return q;
+    }
+    function restoreQty(q) {
+      PRODUCTS.forEach(function (p) {
+        var el = document.getElementById(qtyId(p));
+        if (el && q[p.key] != null) el.value = q[p.key];
+      });
+    }
+    function applyLivePrices(map) {
+      var updated = 0;
+      PRODUCTS.forEach(function (p) {
+        var v = map[p.mc];
+        if (typeof v === 'number' && isFinite(v) && v >= 0) {
+          p.pricePerItem = v;
+          updated++;
+        }
+      });
+      return updated;
+    }
+    function loadLivePrices() {
+      setPriceStatus('Live-Preise werden geladen …', false);
+      var chain = Promise.resolve(null);
+      WORTH_URLS.forEach(function (url) {
+        chain = chain.then(function (found) {
+          if (found) return found;
+          return fetch(url, { cache: 'no-store' }).then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          }).then(function (data) {
+            var map = {};
+            (data.items || []).forEach(function (it) {
+              if (it && typeof it.item === 'string' && typeof it.price === 'number') map[it.item] = it.price;
+            });
+            return { map: map, url: url };
+          }).catch(function () { return null; });
+        });
+      });
+      return chain.then(function (result) {
+        if (!result) {
+          setPriceStatus('Live-Abruf fehlgeschlagen — Fallback-Preise aktiv (' + Object.keys(FALLBACK_PRICES).length + ' Items).', true);
+          return false;
+        }
+        var qty = snapshotQty();
+        var updated = applyLivePrices(result.map);
+        livePricesLoaded = updated > 0;
+        renderProducts();
+        restoreQty(qty);
+        totals();
+        var when = new Date().toLocaleTimeString('de-DE');
+        setPriceStatus('Live-Preise geladen (' + updated + '/' + PRODUCTS.length + ' Items, ' + when + ') — alle Anzeigen netto, +15 % erst im Warenkorb.', false);
+        return true;
+      });
+    }
   </script>
 </body>
 </html>
