@@ -160,6 +160,19 @@
       'minecraft:rotten_flesh': 1.21,
       'minecraft:shulker_box': 440
     };
+    // Google-Formular "Mystic-Shop / Submit your Orders" -> alle Bestellungen landen als Zeilen in der verknüpften Tabelle.
+    var GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfC24tNwzmeSIZ9nHpO1U1CcUhkdFhtrS6uRPraSSu3RuF0YQ/formResponse';
+    var GOOGLE_ENTRIES = {
+      code: 'entry.2074320572',      // Ordercode
+      mc: 'entry.1172526715',        // MC-Name
+      discord: 'entry.1152320105',   // Discord-Name
+      note: 'entry.1507927729',      // Annotation
+      details: 'entry.2038445775',   // Orderdetails
+      subtotal: 'entry.2059319284',  // Ordervalue (netto)
+      fee: 'entry.983989368',        // Fee (15 %)
+      total: 'entry.59737387'        // Total (Fee included)
+    };
+    var GOOGLE_FBZX = '-2789342112938403002';
     var PRODUCTS = [
       { key: 'eisen',       de: 'Eisenbarren',          mc: 'minecraft:iron_ingot',   icon: '⛓️', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 5.5 },
       { key: 'shells',      de: 'Shulkerschalen',       mc: 'minecraft:shulker_shell', icon: '🐚', unit: 'shulker', itemsPerUnit: SHULKER_ITEMS, pricePerItem: 60.5 },
@@ -307,6 +320,30 @@
     document.getElementById('btn-copy-code').addEventListener('click', function () { copyText(codeEl.textContent, this); });
     document.getElementById('btn-copy-msg').addEventListener('click', function () { copyText(msgEl.textContent, this); });
 
+    // Bestellung zusätzlich als Zeile ins Google Sheet schreiben (fire-and-forget, kein API-Key nötig).
+    function postToSheet(d) {
+      var params = new URLSearchParams();
+      params.append(GOOGLE_ENTRIES.code, d.code);
+      params.append(GOOGLE_ENTRIES.mc, d.mc);
+      params.append(GOOGLE_ENTRIES.discord, d.discord);
+      params.append(GOOGLE_ENTRIES.note, d.note);
+      params.append(GOOGLE_ENTRIES.details, d.details);
+      params.append(GOOGLE_ENTRIES.subtotal, d.subtotal);
+      params.append(GOOGLE_ENTRIES.fee, d.fee);
+      params.append(GOOGLE_ENTRIES.total, d.total);
+      params.append('fbzx', GOOGLE_FBZX);
+      params.append('pageHistory', '0');
+      try {
+        if (navigator.sendBeacon) {
+          var blob = new Blob([params.toString()], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
+          if (navigator.sendBeacon(GOOGLE_FORM_URL, blob)) return;
+        }
+      } catch (e) {}
+      try {
+        fetch(GOOGLE_FORM_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+      } catch (e) {}
+    }
+
     form.addEventListener('submit', function (e) {
       var t = totals();
       updateMsg();
@@ -334,6 +371,16 @@
       document.getElementById('fs_total').value = fmt(t.total) + ' Worth';
       document.getElementById('fs_details').value = details;
       document.getElementById('fs_subject').value = 'Neue Shulker-Bestellung ' + codeEl.textContent + ' (' + mcnameEl.value.trim() + ', ' + fmt(t.total) + ' Worth inkl. Gebuehr)';
+      postToSheet({
+        code: codeEl.textContent,
+        mc: mcnameEl.value.trim(),
+        discord: (document.getElementById('discord').value || '').trim(),
+        note: (document.getElementById('note').value || '').trim(),
+        details: detailLines.join('\n'),
+        subtotal: fmt(t.subtotal) + ' Worth',
+        fee: fmt(t.fee) + ' Worth',
+        total: fmt(t.total) + ' Worth'
+      });
     });
 
     // ---- Live-Preise per HTTP (mit Fallback) ----
